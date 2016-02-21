@@ -54,6 +54,7 @@ end
 
 #SinatraでCSV
 #http://d.hatena.ne.jp/yamamucho/20100614/1276520334
+#FIXME データ欠損するとデータがずれるので正確にデータを持つ
 get '/data_csv' do
   content_type 'text/csv'
   attachment 'test.csv'
@@ -72,20 +73,33 @@ get '/data_csv' do
 
   if @ids != nil
     @original_data =  DB[:pixiv_tag_daily].select(:get_date, :bases_id, :total).where(:bases_id => @ids).order(:bases_id).all
-    p @original_data
   end
 
   title_base_data = {}
+  stuct_data = {}
+
   @original_data.each do |record|
     title_base_data[record[:bases_id]] = [] if title_base_data[record[:bases_id]] == nil
-    title_base_data[record[:bases_id]] << {:date => record[:get_datte], :total => record[:total]}
+    title_base_data[record[:bases_id]] = nil
+
+    stuct_data[record[:bases_id]] = {} if stuct_data[record[:bases_id]].nil?
+
+    stuct_data[record[:bases_id]][record[:get_date]] = record[:total]
   end
 
-  #TODO Daily増加分の計算
+  #Daily増加分の計算
   csv_data = {}
   @original_data.each do |record|
     csv_data[record[:get_date]] = [] if csv_data[record[:get_date]] == nil
-    csv_data[record[:get_date]] << record[:total].to_s
+
+    before_score = stuct_data[record[:bases_id]][record[:get_date] - (24 * 60 * 60)]
+
+    if before_score.nil?
+      csv_data[record[:get_date]] << record[:total]
+    else
+      csv_data[record[:get_date]] << record[:total] - before_score
+    end
+
   end
 
   #1行目
