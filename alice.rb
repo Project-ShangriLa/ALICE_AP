@@ -28,27 +28,58 @@ def db_connection()
                 :port=>settings.database_port)
 end
 
+=begin
+/*
+gdataList[0] = [x['yyyy-mm-dd'].substr(5), x.follower] [x['yyyy-mm-dd'].substr(5), x.follower]
+
+                        draw([{
+                            name: tagetAccountList[0],
+                            data: gdataList[0]
+                        }, {
+                            name: tagetAccountList[1],
+                            data: gdataList[1]
+                        }, ]);*/
+=end
+
+
 
 get '/data_json' do
-  @master = settings.master
+  master = settings.master
   @ids = params[:ids].split(',')
 
   @start = params[:start]
   @end = params[:end]
 
-
-  @result = nil
+  original_data = nil
+  result = []
 
   DB = db_connection
 
-
-  ##TODO Daily増加分の計算
-
   if @ids != nil
-    @result =  DB[:pixiv_tag_daily].where(:bases_id => @ids).all
+    original_data =  DB[:pixiv_tag_daily].select(:get_date, :bases_id, :total).
+        where(:bases_id => @ids).
+        where("get_date >= ADDDATE(cast(\"#{@start}\" as date), INTERVAL -1 DAY)").
+        where("get_date <= #{@end}").
+        order(:bases_id).all
   end
 
-  json @result
+  stuct_data = {}
+
+  original_data.each do |record|
+    stuct_data[record[:bases_id]] = [] if stuct_data[record[:bases_id]].nil?
+    stuct_data[record[:bases_id]] <<  [record[:get_date].strftime('%Y-%m-%d'), record[:total]]
+  end
+
+  #TODO 先頭の１日分データを消す
+  #TODO 増減を返す
+  stuct_data.each do |key, value|
+    result << {
+    'name' => master[key]['title'],
+    'data' => value
+    }
+  end
+
+  json result
 end
 
 
