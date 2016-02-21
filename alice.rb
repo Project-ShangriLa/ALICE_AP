@@ -84,9 +84,7 @@ get '/data_csv' do
   start = params[:start]
   end_date = params[:end]
 
-
   original_data = nil
-  result = nil
 
   DB = db_connection
 
@@ -98,43 +96,50 @@ get '/data_csv' do
         order(:bases_id).order(:get_date).all
   end
 
-  title_base_data = {}
-  stuct_data = {}
+  struct_data = {}
 
   original_data.each do |record|
-    title_base_data[record[:bases_id]] = [] if title_base_data[record[:bases_id]] == nil
-    title_base_data[record[:bases_id]] = nil
+    struct_data[record[:bases_id]] = {} if struct_data[record[:bases_id]].nil?
 
-    stuct_data[record[:bases_id]] = {} if stuct_data[record[:bases_id]].nil?
-
-    stuct_data[record[:bases_id]][record[:get_date]] = record[:total]
+    struct_data[record[:bases_id]][record[:get_date]] = record[:total]
   end
 
-  #Daily増加分の計算
+  struct_data2 = {}
+
+  struct_data.each do |key, value|
+
+    struct_data2[key] = {} if struct_data2[key].nil?
+
+    value.each {|date, total|
+
+      before_score = struct_data[key][date - (24 * 60 * 60)]
+
+      if before_score.nil?
+        struct_data2[key][date] = total
+      else
+        struct_data2[key][date] = total - struct_data[key][date - (24 * 60 * 60)]
+      end
+
+    }
+  end
+
   csv_data = {}
-  original_data.each do |record|
-    csv_data[record[:get_date]] = [] if csv_data[record[:get_date]] == nil
-
-    before_score = stuct_data[record[:bases_id]][record[:get_date] - (24 * 60 * 60)]
-
-    if before_score.nil?
-      csv_data[record[:get_date]] << record[:total]
-    else
-      csv_data[record[:get_date]] << record[:total] - before_score
-    end
-
-  end
-
-  #1行目
+  #１列目1行目
   csv_string = ''
-  title_base_data.each{|key, value|
+  struct_data2.each{|key, value|
     csv_string +=',' #1行目1列目は空
     csv_string = csv_string + master[key]['title']
+
+    value.each do |k, v|
+      csv_data[k]  = [] if csv_data[k].nil?
+      csv_data[k] << v
+    end
   }
   csv_string += "\n"
 
   first = true
   csv_data.each{|key, value|
+    #先頭の１行目はださない
     csv_string = csv_string + key.strftime("%Y-%m-%d") + ',' + value.join(',') + "\n" if first == false
     first = false
   }
