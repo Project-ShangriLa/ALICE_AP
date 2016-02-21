@@ -28,38 +28,23 @@ def db_connection()
                 :port=>settings.database_port)
 end
 
-=begin
-/*
-gdataList[0] = [x['yyyy-mm-dd'].substr(5), x.follower] [x['yyyy-mm-dd'].substr(5), x.follower]
-
-                        draw([{
-                            name: tagetAccountList[0],
-                            data: gdataList[0]
-                        }, {
-                            name: tagetAccountList[1],
-                            data: gdataList[1]
-                        }, ]);*/
-=end
-
-
-
 get '/data_json' do
   master = settings.master
-  @ids = params[:ids].split(',')
+  ids = params[:ids].split(',')
 
-  @start = params[:start]
-  @end = params[:end]
+  start = params[:start]
+  end_date = params[:end]
 
   original_data = nil
   result = []
 
   DB = db_connection
 
-  if @ids != nil
+  if ids != nil
     original_data =  DB[:pixiv_tag_daily].select(:get_date, :bases_id, :total).
-        where(:bases_id => @ids).
-        where("get_date >= ADDDATE(cast(\"#{@start}\" as date), INTERVAL -1 DAY)").
-        where("get_date <= #{@end}").
+        where(:bases_id => ids).
+        where("get_date >= ADDDATE(cast(\"#{start}\" as date), INTERVAL -1 DAY)").
+        where("get_date <= #{end_date}").
         order(:bases_id).all
   end
 
@@ -93,30 +78,30 @@ get '/data_csv' do
   content_type 'text/csv'
   attachment 'test.csv'
 
-  @master = settings.master
-  @ids = params[:ids].split(',')
+  master = settings.master
+  ids = params[:ids].split(',')
 
-  @start = params[:start]
-  @end = params[:end]
+  start = params[:start]
+  end_date = params[:end]
 
 
-  @original_data = nil
-  @result = nil
+  original_data = nil
+  result = nil
 
   DB = db_connection
 
-  if @ids != nil
-    @original_data =  DB[:pixiv_tag_daily].select(:get_date, :bases_id, :total).
-        where(:bases_id => @ids).
-        where("get_date >= ADDDATE(cast(\"#{@start}\" as date), INTERVAL -1 DAY)").
-        where("get_date <= #{@end}").
-        order(:bases_id).all
+  if ids != nil
+    original_data =  DB[:pixiv_tag_daily].select(:get_date, :bases_id, :total).
+        where(:bases_id => ids).
+        where("get_date >= ADDDATE(cast(\"#{start}\" as date), INTERVAL -1 DAY)").
+        where("get_date <= #{end_date}").
+        order(:bases_id).order(:get_date).all
   end
 
   title_base_data = {}
   stuct_data = {}
 
-  @original_data.each do |record|
+  original_data.each do |record|
     title_base_data[record[:bases_id]] = [] if title_base_data[record[:bases_id]] == nil
     title_base_data[record[:bases_id]] = nil
 
@@ -127,7 +112,7 @@ get '/data_csv' do
 
   #Daily増加分の計算
   csv_data = {}
-  @original_data.each do |record|
+  original_data.each do |record|
     csv_data[record[:get_date]] = [] if csv_data[record[:get_date]] == nil
 
     before_score = stuct_data[record[:bases_id]][record[:get_date] - (24 * 60 * 60)]
@@ -144,7 +129,7 @@ get '/data_csv' do
   csv_string = ''
   title_base_data.each{|key, value|
     csv_string +=',' #1行目1列目は空
-    csv_string = csv_string + @master[key]['title']
+    csv_string = csv_string + master[key]['title']
   }
   csv_string += "\n"
 
@@ -155,6 +140,6 @@ get '/data_csv' do
   }
 
   #for Excel
-  csv_string.encode("Shift_JIS", "UTF-8")
+  csv_string.encode("Shift_JIS", "UTF-8" , :undef => :replace, :replace => ' ')
 
 end
