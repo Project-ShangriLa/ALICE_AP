@@ -45,7 +45,7 @@ get '/data_json' do
         where(:bases_id => ids).
         where("get_date >= ADDDATE(cast(\"#{start}\" as date), INTERVAL -1 DAY)").
         where("get_date <= #{end_date}").
-        order(:bases_id).all
+        order(:bases_id).order(:get_date).all
   end
 
   stuct_data = {}
