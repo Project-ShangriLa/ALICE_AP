@@ -70,12 +70,15 @@ get '/data_json' do
     stuct_data[record[:bases_id]] <<  [record[:get_date].strftime('%Y-%m-%d'), record[:total]]
   end
 
-  #TODO 先頭の１日分データを消す
-  #TODO 増減を返す
   stuct_data.each do |key, value|
+
+    up_score = []
+    #増減を算出
+    value.each_with_index {|v, i|  up_score[i] = [ v[0], v[1] - value[i - 1][1] ]  if i > 0 } # 先頭の１日分データを消す
+
     result << {
     'name' => master[key]['title'],
-    'data' => value
+    'data' => up_score[1..(up_score.length - 1 )]
     }
   end
 
