@@ -72,7 +72,11 @@ get '/data_csv' do
   DB = db_connection
 
   if @ids != nil
-    @original_data =  DB[:pixiv_tag_daily].select(:get_date, :bases_id, :total).where(:bases_id => @ids).order(:bases_id).all
+    @original_data =  DB[:pixiv_tag_daily].select(:get_date, :bases_id, :total).
+        where(:bases_id => @ids).
+        where("get_date >= ADDDATE(cast(\"#{@start}\" as date), INTERVAL -1 DAY)").
+        where("get_date <= #{@end}").
+        order(:bases_id).all
   end
 
   title_base_data = {}
@@ -110,8 +114,10 @@ get '/data_csv' do
   }
   csv_string += "\n"
 
+  first = true
   csv_data.each{|key, value|
-    csv_string = csv_string + key.strftime("%Y-%m-%d") + ',' + value.join(',') + "\n"
+    csv_string = csv_string + key.strftime("%Y-%m-%d") + ',' + value.join(',') + "\n" if first == false
+    first = false
   }
 
   #for Excel
