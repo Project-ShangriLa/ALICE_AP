@@ -11,7 +11,11 @@ configure do
   set :public, File.dirname(__FILE__) + '/public'
 
   puts "-------LOAD-------"
-  set(:master) { Shangrila::Sora.new().get_map_key_id(2016, 1) }
+  set(:master) {
+    c9 = Shangrila::Sora.new().get_map_key_id(2016, 1)
+    c10 = Shangrila::Sora.new().get_map_key_id(2016, 2)
+    c9.update(c10)
+  }
 
   set(:database_name) { 'anime_admin_development' }
   set(:database_hostname) { 'localhost' }
@@ -30,6 +34,7 @@ end
 
 get '/data_json' do
   master = settings.master
+
   ids = params[:ids].split(',')
 
   start = params[:start]
