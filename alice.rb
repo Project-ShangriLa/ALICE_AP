@@ -15,8 +15,10 @@ configure do
     c9 = Shangrila::Sora.new().get_map_key_id(2016, 1)
     c10 = Shangrila::Sora.new().get_map_key_id(2016, 2)
     c11 = Shangrila::Sora.new().get_map_key_id(2016, 3)
+    c12 = Shangrila::Sora.new().get_map_key_id(2016, 4)
     c9.update(c10)
     c9.update(c11)
+    c9.update(c12)
   }
 
   set(:database_name) { 'anime_admin_development' }
