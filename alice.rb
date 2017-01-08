@@ -16,9 +16,11 @@ configure do
     c10 = Shangrila::Sora.new().get_map_key_id(2016, 2)
     c11 = Shangrila::Sora.new().get_map_key_id(2016, 3)
     c12 = Shangrila::Sora.new().get_map_key_id(2016, 4)
+    c13 = Shangrila::Sora.new().get_map_key_id(2017, 1)
     c9.update(c10)
     c9.update(c11)
     c9.update(c12)
+    c9.update(c13)
   }
 
   set(:database_name) { 'anime_admin_development' }
@@ -47,10 +49,10 @@ get '/data_json' do
   original_data = nil
   result = []
 
-  DB = db_connection
+  db = db_connection
 
   if ids != nil
-    original_data =  DB[:pixiv_tag_daily].select(:get_date, :bases_id, :total).
+    original_data =  db[:pixiv_tag_daily].select(:get_date, :bases_id, :total).
         where(:bases_id => ids).
         where("get_date >= ADDDATE(cast(\"#{start}\" as date), INTERVAL -1 DAY)").
         where("get_date <= #{end_date}").
@@ -76,6 +78,7 @@ get '/data_json' do
     }
   end
 
+  db.disconnect
   json result
 end
 
@@ -95,10 +98,10 @@ get '/data_csv' do
 
   original_data = nil
 
-  DB = db_connection
+  db = db_connection
 
   if ids != nil
-    original_data =  DB[:pixiv_tag_daily].select(:get_date, :bases_id, :total).
+    original_data =  db[:pixiv_tag_daily].select(:get_date, :bases_id, :total).
         where(:bases_id => ids).
         where("get_date >= ADDDATE(cast(\"#{start}\" as date), INTERVAL -1 DAY)").
         where("get_date <= #{end_date}").
@@ -152,6 +155,8 @@ get '/data_csv' do
     csv_string = csv_string + key.strftime("%Y-%m-%d") + ',' + value.join(',') + "\n" if first == false
     first = false
   }
+
+  db.disconnect
 
   #for Excel
   csv_string.encode("Shift_JIS", "UTF-8" , :undef => :replace, :replace => ' ')
